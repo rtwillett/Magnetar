@@ -19,7 +19,7 @@ setuptools.setup(
         ],
     install_requires=[
         "wheel",
-        "jupyter"
+        "jupyter",
         "pandas",
         "numpy"
         ]
