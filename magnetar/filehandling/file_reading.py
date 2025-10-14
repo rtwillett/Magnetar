@@ -22,7 +22,7 @@ class FileReader:
             
     def filter_badlines(self, file_string:str): 
         import numpy as np
-               
+        from ..fileprocessing.file_analysis import DetectDelimiter
         
         file_lines = np.array(file_string.split('\n'))
 

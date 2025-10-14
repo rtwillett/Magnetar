@@ -7,10 +7,17 @@ class AbstractSelenium():
     
     def __init__(self, driver_path = None):
         from selenium import webdriver
-        from selenium.webdriver.chrome.service import Service
         from selenium.webdriver.chrome.options import Options
         
-        self.driver_path = driver_path
+        from selenium.webdriver.chrome.service import Service as ChromeService
+        from webdriver_manager.chrome import ChromeDriverManager
+        
+        self.driver_path = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
+        
+        if self.driver_path is None:
+            raise Exception("Driver was not installed properly")
+        else: 
+            self.driver_path = driver_path
             
     def build_scraper(self):
         '''
@@ -29,20 +36,32 @@ class AbstractSelenium():
         else: 
             print("/screenshot/ directory exists")
             
+        self.UA = self.select_user_agent()
+            
+    def select_user_agent(self):
+        import requests
+        from fake_useragent import UserAgent
+        
+        # Create an instance of UserAgent
+        ua = UserAgent()
+        chrome_ua = ua.chrome
+        print(f"Random Chrome user agent: {chrome_ua}")
+            
     def launch_browser(self, options=None):
         from selenium import webdriver
-        
-        if not self.driver_path:
-            service = webdriver.ChromeService(executable_path = '/usr/bin/chromedriver')
-        else: 
-            service = webdriver.ChromeService(executable_path = self.driver_path)
-            
-        self.driver = webdriver.Chrome(service=service)
+
+        self.driver = webdriver.Chrome(service=self.driver_path)
         
     def close_browser(self):
         self.driver.close()
     
     def recaptcha_click(self):
+        '''
+        Stub method for defeating captchas. This should be expanded. 
+        It is has not been tested for some time and may not be working properly.
+        '''
+        
+        
         from selenium.webdriver.support.ui import WebDriverWait
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support import expected_conditions as EC
@@ -77,6 +96,8 @@ class AbstractSelenium():
         Saves down the source code for the current site that the driver is on. A one second sleep
         is granted to allow the site to load before it is saved.
         '''
+        
+        # Detect if .html is in the filename and remove it to prevent double file extensions
 
         # from erebus.crypto import make_alphanumeric_token
         import time
@@ -95,5 +116,9 @@ class AbstractSelenium():
         '''
         Saves a screenshot of the current view of that url.
         '''
+        
+        # Detect if .png is in the filename and remove it to prevent double file extensions
+        # Consider giving the use the ability to specify the format that they want and convert
+        
         self.driver.save_screenshot(f'./screenshot/{filename}.png')
     
