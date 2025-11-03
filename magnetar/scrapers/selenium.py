@@ -19,7 +19,7 @@ class AbstractSelenium():
         else: 
             self.driver_path = driver_path
             
-    def build_scraper(self):
+    def build_scraper(self) -> None:
         '''
         Sets up the directory dependency to drop the save files into by default.
         '''
@@ -38,7 +38,7 @@ class AbstractSelenium():
             
         self.UA = self.select_user_agent()
             
-    def select_user_agent(self):
+    def select_user_agent(self) -> None:
         import requests
         from fake_useragent import UserAgent
         
@@ -47,15 +47,15 @@ class AbstractSelenium():
         chrome_ua = ua.chrome
         print(f"Random Chrome user agent: {chrome_ua}")
             
-    def launch_browser(self, options=None):
+    def launch_browser(self, options=None) -> None:
         from selenium import webdriver
 
         self.driver = webdriver.Chrome(service=self.driver_path)
         
-    def close_browser(self):
+    def close_browser(self) -> None:
         self.driver.close()
     
-    def recaptcha_click(self):
+    def recaptcha_click(self) -> None:
         '''
         Stub method for defeating captchas. This should be expanded. 
         It is has not been tested for some time and may not be working properly.
@@ -69,7 +69,7 @@ class AbstractSelenium():
         WebDriverWait(self.driver, 2).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR,"iframe[src^='https://www.google.com/recaptcha/api2/anchor']")))
         WebDriverWait(self.driver, 2).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "div.recaptcha-checkbox-border"))).click()
 
-    def go_to_site(self, url, delay = 0):
+    def go_to_site(self, url, delay = 0) -> None:
         '''
         Instructs the chromedriver to navigate to the site.
         '''
@@ -91,7 +91,73 @@ class AbstractSelenium():
 
         self.driver.get(url_clean)
 
-    def save_source(self, filename):
+    def pull_text_from_element(self, selector:str, label:str, mode:str = 'single') -> str | list[str]:
+        from selenium.webdriver.common.by import By
+
+        selector_dict = {
+            'class': By.CLASS_NAME,
+            'id': By.ID,
+            'xpath': By.XPATH,
+            'css': By.CSS_SELECTOR,
+            'name': By.NAME,
+            'tag': By.TAG_NAME,
+            'link_text': By.LINK_TEXT,
+            'partial_link_text': By.PARTIAL_LINK_TEXT
+        }
+
+        if selector not in selector_dict.keys():
+            raise Exception('Selector not recognized. Valid selectors are: "class", "id", "xpath", "css", "name", "tag", "link_text", "partial_link_text"')
+
+        if mode == 'single':
+            element = self.driver.find_element(selector_dict[selector], label) # Replace with the actual class name
+
+            # Extract the text
+            text = element.text
+            return text
+        elif mode == 'all':
+            elements = self.driver.find_elements(selector_dict[selector], label) # Replace with the actual class name")
+            return [element.text for element in elements]
+        else: 
+            raise Exception('Mode not recognized. Use "all" or "single"')
+        
+    def pull_urls(self) -> list[str]:
+        from selenium import webdriver
+        from selenium.webdriver.common.by import By
+
+        # Find all anchor elements
+        all_links = self.driver.find_elements(By.TAG_NAME, "a")
+
+        urls = []
+        for link_element in all_links:
+            href = link_element.get_attribute("href")
+            if href:  # Ensure the href attribute exists
+                urls.append(href)
+            else:
+                continue
+
+        return urls
+        
+    def push_button(self, element_id) -> None:
+        from selenium import webdriver
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+
+        try:
+
+            # Locate the button using its ID (replace "myButton" with the actual ID)
+            # Wait up to 10 seconds for the button to be clickable
+            submit_button = WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.ID, element_id))
+            )
+
+            # Click the button
+            submit_button.click()
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+    def save_source(self, filename) -> None:
         '''
         Saves down the source code for the current site that the driver is on. A one second sleep
         is granted to allow the site to load before it is saved.
@@ -112,7 +178,7 @@ class AbstractSelenium():
         with open(file_out, 'w', encoding='utf-8') as f: 
             f.write(self.driver.page_source)
 
-    def screenshot(self, filename):
+    def screenshot(self, filename) -> None:
         '''
         Saves a screenshot of the current view of that url.
         '''
